@@ -54,3 +54,50 @@ int main(int argc, char *argv[]) {
     }
     exit(0);
 }
+
+// wrong implementation before getting help
+'''
+#include "kernel/types.h"
+#include "user/user.h"
+
+void prime_generator(int fd, int max){
+    int p[2];
+    pipe(p);
+    int pid = fork();
+    if(pid > 0){ // parent
+        int prime;
+        read(fd, &prime, 4);
+        close(fd);
+        printf("prime: %d\n", prime);
+        
+        if (prime > max){
+            return;
+        }
+
+        close(p[0]);
+        int x;
+        while(read(fd, &x, 4)){
+            if(x % prime != 0){
+                write(p[1], &x, 4);
+            }
+        }
+        close(p[1]);
+
+    } else if (pid == 0){ // child
+        close(p[1]);
+        prime_generator(p[0], 7); // it will close the read end
+    } else {
+        printf("error\n");
+    }
+}
+
+int main(int argc, char * argv[]){
+
+    int p[2];
+    pipe(p);
+    int prime = 2;
+    write(p[1], &prime, 4);
+    close(p[1]);
+    prime_generator(p[0], 7);
+}
+'''
