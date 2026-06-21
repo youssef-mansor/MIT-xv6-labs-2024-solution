@@ -1,0 +1,26 @@
+* The function that called `syscall` is `usertrap()` and the code 
+that called `usertrap()` was inside `trampoline.S` which doesn't have
+associated symbols table and hence the gdb prints it as ??
+
+* The value of the trapframe of the first process is 0x87f56000.
+However, the question is asking about the value of p->trapframe->a7.
+And what it represents. I couldn't find in the printing the reg a7!
+The value of the trapframe however represent the page where the 
+user registers are spilled and restored when switching between
+user space and kernel space. Generally however, a7 should hold the
+number of the system call to be executed. Here it is exec. It has the
+number 7 as seen in syscall.h 
+
+* The previous mode was zero. Just check the SPP bit.
+
+* This is the instruction the kernel is panicing at:
+  num = * (int *) 0;
+    80001c82:	00002683	lw	a3,0(zero) # 0 <_entry-0x80000000>
+and the register a3 corresponds to the variable number.
+The panic is confirmed by qemu output:
+scause=0xd sepc=0x80001c82 stval=0x0
+panic: kerneltrap
+according to page 85 of rv priv specifications
+load page fault is 13 = 0xd
+
+* The process name is initcode and the process id was 1
